@@ -1,0 +1,48 @@
+name: DaddyHD Data Collector
+
+on:
+  schedule:
+    # Run every 1.5 hours (90 minutes)
+    - cron: '0 */1.5 * * *'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  collect-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Collect DaddyHD Data
+      run: |
+        echo "🚀 Collecting DaddyHD data..."
+        
+        # Collect live events
+        curl -s "${{ secrets.DADDYHD_API_URL }}/daddyhd/liveevents.json" > liveevents.json
+        echo "✅ Live events collected"
+        
+        # Collect TV shows
+        curl -s "${{ secrets.DADDYHD_API_URL }}/daddyhd/tvshow.json" > tvshow.json
+        echo "✅ TV shows collected"
+        
+        # Collect all events
+        curl -s "${{ secrets.DADDYHD_API_URL }}/daddyhd/all.json" > all_events.json
+        echo "✅ All events collected"
+        
+        echo "All data collected successfully!"
+    
+    - name: Commit and push data
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Add all JSON files
+        git add *.json
+        
+        # Commit with timestamp
+        TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        git commit -m "🤖 Auto-collect DaddyHD data - $TIMESTAMP" || echo "No changes to commit"
+        
+        # Push to repository
+        git push || echo "No changes to push" 
